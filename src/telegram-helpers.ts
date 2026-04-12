@@ -305,10 +305,15 @@ export async function editMessageText(
   try {
     await bot.api.editMessageText(chatId, messageId, text, options as any);
   } catch (err) {
-    // Suppress "message is not modified" — harmless duplicate edit
+    // Suppress harmless errors where the message has already been deleted or replaced
     const errMsg = err instanceof Error ? err.message : String(err);
-    if (errMsg.includes('message is not modified')) {
-      logger.debug({ chatId, messageId }, 'Edit skipped: message unchanged');
+    const isHarmless = 
+      errMsg.includes('message is not modified') || 
+      errMsg.toLowerCase().includes('message to edit not found') ||
+      errMsg.toLowerCase().includes('not found');
+
+    if (isHarmless) {
+      logger.debug({ chatId, messageId, errMsg }, 'Edit skipped: message unavailable or unchanged');
     } else {
       logger.error(
         { chatId, messageId, err: formatError(err) },

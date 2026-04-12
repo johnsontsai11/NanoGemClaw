@@ -49,7 +49,16 @@ export async function connectTelegram(): Promise<void> {
     process.exit(1);
   }
 
-  const bot = new Bot(TELEGRAM_BOT_TOKEN);
+  // Use a custom HTTPS Agent with keepAlive disabled and IPv4 forced
+  // This explicitly fixes Telegram socket dropping ETIMEDOUT bugs under concurrent load
+  const { Agent } = await import('https');
+  const agent = new Agent({ keepAlive: false, family: 4 });
+  
+  const bot = new Bot(TELEGRAM_BOT_TOKEN, {
+    client: {
+      baseFetchConfig: { agent },
+    },
+  });
   setBot(bot);
 
   // Warn if auto-detect mode is armed

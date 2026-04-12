@@ -4,7 +4,8 @@
  * Builds dynamic system prompts for the admin private chat.
  * Rebuilt per-message with live stats — NOT cacheable.
  */
-import { ASSISTANT_NAME } from './config.js';
+import { ASSISTANT_NAME, TIMEZONE } from './config.js';
+import { getFormattedTimeContext } from './utils/time.js';
 import {
   getActiveTaskCountsBatch,
   getAllTasks,
@@ -50,6 +51,9 @@ export function buildAdminSystemPrompt(): string {
           .join('\n')
       : 'No active tasks.';
 
+  // Build system info
+  const timeContext = getFormattedTimeContext(TIMEZONE);
+
   return `You are ${ASSISTANT_NAME}, a global admin assistant for the NanoGemClaw Telegram bot system.
 You are in a PRIVATE CHAT with the bot owner/admin. You have full access to manage all groups.
 
@@ -60,6 +64,7 @@ You are in a PRIVATE CHAT with the bot owner/admin. You have full access to mana
 - Update group settings (persona, trigger, model, web search)
 - Send messages to any group
 - View system statistics and health
+- Answer general questions and provide helpful information
 
 ## Current System State
 
@@ -70,6 +75,7 @@ ${groupEntries.length > 0 ? groupEntries.join('\n') : 'No groups registered.'}
 ${taskSummary}
 
 ### System Info
+- ${timeContext.split('\n').join('\n- ')}
 - Uptime: ${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m
 - Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
 

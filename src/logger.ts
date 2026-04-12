@@ -3,6 +3,8 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { TIMEZONE } from './config.js';
+import { getLocalTimestamp } from './utils/time.js';
 
 export interface LogEntry {
   id: number;
@@ -45,8 +47,13 @@ function maskSensitiveData(obj: unknown): unknown {
 }
 
 function formatData(data: unknown): string {
+  if (data === undefined || data === null) return '';
   if (typeof data === 'string') return data;
-  if (typeof data === 'object') return JSON.stringify(maskSensitiveData(data));
+  if (typeof data === 'object') {
+    const masked = maskSensitiveData(data);
+    if (Object.keys(masked as object).length === 0) return '';
+    return JSON.stringify(masked);
+  }
   return String(data);
 }
 
@@ -72,52 +79,56 @@ export function setLogLevel(level: string): void {
 export const logger = {
   debug: (data: unknown, msg?: string) => {
     if (shouldLog('debug')) {
-      const message = `[DEBUG] ${msg || ''} ${formatData(data)}`;
+      const timestamp = getLocalTimestamp(TIMEZONE);
+      const message = `[${timestamp}] [DEBUG] ${msg || ''} ${formatData(data)}`;
       console.log(message);
       addToBuffer({
         id: ++logIdCounter,
-        timestamp: new Date().toISOString(),
+        timestamp,
         level: 'debug',
-        message,
+        message: `[DEBUG] ${msg || ''} ${formatData(data)}`,
         data,
       });
     }
   },
   info: (data: unknown, msg?: string) => {
     if (shouldLog('info')) {
-      const message = `[INFO] ${msg || ''} ${formatData(data)}`;
+      const timestamp = getLocalTimestamp(TIMEZONE);
+      const message = `[${timestamp}] [INFO] ${msg || ''} ${formatData(data)}`;
       console.log(message);
       addToBuffer({
         id: ++logIdCounter,
-        timestamp: new Date().toISOString(),
+        timestamp,
         level: 'info',
-        message,
+        message: `[INFO] ${msg || ''} ${formatData(data)}`,
         data,
       });
     }
   },
   warn: (data: unknown, msg?: string) => {
     if (shouldLog('warn')) {
-      const message = `[WARN] ${msg || ''} ${formatData(data)}`;
+      const timestamp = getLocalTimestamp(TIMEZONE);
+      const message = `[${timestamp}] [WARN] ${msg || ''} ${formatData(data)}`;
       console.warn(message);
       addToBuffer({
         id: ++logIdCounter,
-        timestamp: new Date().toISOString(),
+        timestamp,
         level: 'warn',
-        message,
+        message: `[WARN] ${msg || ''} ${formatData(data)}`,
         data,
       });
     }
   },
   error: (data: unknown, msg?: string) => {
     if (shouldLog('error')) {
-      const message = `[ERROR] ${msg || ''} ${formatData(data)}`;
+      const timestamp = getLocalTimestamp(TIMEZONE);
+      const message = `[${timestamp}] [ERROR] ${msg || ''} ${formatData(data)}`;
       console.error(message);
       addToBuffer({
         id: ++logIdCounter,
-        timestamp: new Date().toISOString(),
+        timestamp,
         level: 'error',
-        message,
+        message: `[ERROR] ${msg || ''} ${formatData(data)}`,
         data,
       });
     }

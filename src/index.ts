@@ -14,6 +14,10 @@
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
+import dns from 'dns';
+
+// Force IPv4 first to prevent ETIMEDOUT on broken local IPv6 networks
+dns.setDefaultResultOrder('ipv4first');
 
 import { ASSISTANT_NAME, DATA_DIR, GROUPS_DIR, STORE_DIR } from './config.js';
 import {

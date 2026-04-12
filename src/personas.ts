@@ -7,6 +7,9 @@
 import fs from 'fs';
 import path from 'path';
 
+import { TIMEZONE } from './config.js';
+import { getFormattedTimeContext } from './utils/time.js';
+
 export const PERSONA_CATEGORIES = [
   'general',
   'technical',
@@ -105,14 +108,16 @@ export function getEffectiveSystemPrompt(
   groupCustomPrompt?: string,
   personaKey?: string,
 ): string {
+  let basePrompt = PERSONAS.default.systemPrompt;
   if (groupCustomPrompt) {
-    return groupCustomPrompt;
+    basePrompt = groupCustomPrompt;
+  } else {
+    const allPersonas = getAllPersonas();
+    if (personaKey && allPersonas[personaKey]) {
+      basePrompt = allPersonas[personaKey].systemPrompt;
+    }
   }
 
-  const allPersonas = getAllPersonas();
-  if (personaKey && allPersonas[personaKey]) {
-    return allPersonas[personaKey].systemPrompt;
-  }
-
-  return PERSONAS.default.systemPrompt;
+  const timeContext = getFormattedTimeContext(TIMEZONE);
+  return `${timeContext}\n\n${basePrompt}`;
 }
