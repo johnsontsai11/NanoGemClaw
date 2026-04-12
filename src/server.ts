@@ -40,12 +40,18 @@ export interface DashboardGroup {
 
 // Configuration
 const DASHBOARD_PORT = 3000;
-const ALLOWED_ORIGINS = (
-  process.env.DASHBOARD_ORIGINS ||
-  `http://localhost:${DASHBOARD_PORT},http://127.0.0.1:${DASHBOARD_PORT},http://localhost:5173,http://localhost:3001`
-)
-  .split(',')
-  .map((s) => s.trim());
+const DEFAULT_ORIGINS = [
+  `http://localhost:${DASHBOARD_PORT}`,
+  `http://127.0.0.1:${DASHBOARD_PORT}`,
+  'http://localhost:5173',
+  'http://localhost:3001',
+];
+const ALLOWED_ORIGINS = [
+  ...new Set([
+    ...DEFAULT_ORIGINS,
+    ...(process.env.DASHBOARD_ORIGINS ? process.env.DASHBOARD_ORIGINS.split(',').map((s) => s.trim()) : []),
+  ]),
+];
 const DASHBOARD_HOST = process.env.DASHBOARD_HOST || '127.0.0.1';
 const DASHBOARD_API_KEY = process.env.DASHBOARD_API_KEY;
 
@@ -298,11 +304,11 @@ export function startDashboardServer() {
   // ================================================================
   // Static file serving (production dashboard)
   // ================================================================
-  const dashboardDist = path.resolve(process.cwd(), 'dashboard', 'dist');
+  const dashboardDist = path.resolve(process.cwd(), 'packages', 'dashboard', 'dist');
   if (fs.existsSync(dashboardDist)) {
     app.use(express.static(dashboardDist));
     // SPA fallback: serve index.html for all non-API routes
-    app.get('{*path}', (_req, res) => {
+    app.get('/*path', (_req, res) => {
       res.sendFile(path.join(dashboardDist, 'index.html'));
     });
     logger.info({ path: dashboardDist }, 'Serving dashboard static files');
