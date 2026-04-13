@@ -389,6 +389,10 @@ async function main(): Promise<void> {
 
   // Connect to Telegram (starts bot + background services)
   await connectTelegram();
+
+  // FINAL STEP: Mount SPA fallback for dashboard (MUST be last to avoid intercepting API routes)
+  const { mountSpaFallback } = await import('./server.js');
+  mountSpaFallback(dashboardApp);
 }
 
 main().catch((err) => {

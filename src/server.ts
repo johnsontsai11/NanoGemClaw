@@ -302,19 +302,6 @@ export function startDashboardServer() {
   app.use('/api', createToolCallsRouter());
 
   // ================================================================
-  // Static file serving (production dashboard)
-  // ================================================================
-  const dashboardDist = path.resolve(process.cwd(), 'packages', 'dashboard', 'dist');
-  if (fs.existsSync(dashboardDist)) {
-    app.use(express.static(dashboardDist));
-    // SPA fallback: serve index.html for all non-API routes
-    app.get('/*path', (_req, res) => {
-      res.sendFile(path.join(dashboardDist, 'index.html'));
-    });
-    logger.info({ path: dashboardDist }, 'Serving dashboard static files');
-  }
-
-  // ================================================================
   // Start Listener
   // ================================================================
 
@@ -341,6 +328,28 @@ export function startDashboardServer() {
   });
 
   return { app, io };
+}
+
+/**
+ * Mount the SPA fallback and static file serving for the dashboard.
+ * This should be called LAST after all API routes (including plugin routes) are mounted.
+ */
+export function mountSpaFallback(app: express.Express) {
+  const dashboardDist = path.resolve(
+    process.cwd(),
+    'packages',
+    'dashboard',
+    'dist',
+  );
+  if (fs.existsSync(dashboardDist)) {
+    app.use(express.static(dashboardDist));
+    // SPA fallback: serve index.html for all non-API routes
+    // In Express 5, * is a wildcard; we specify it as a parameter 'path'
+    app.get('/*path', (_req, res) => {
+      res.sendFile(path.join(dashboardDist, 'index.html'));
+    });
+    logger.info({ path: dashboardDist }, 'Mounted dashboard SPA fallback');
+  }
 }
 
 /**

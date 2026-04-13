@@ -14,53 +14,10 @@
  *   - _def.innerType — optional/nullable wrapper
  */
 
-import { logger } from './logger.js';
+import { logger, validateToolInput } from '@nanogemclaw/core';
+import type { ParseableSchema, ValidationResult } from '@nanogemclaw/core';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Structural type matching any schema with a .parse() method */
-export interface ParseableSchema {
-  parse(data: unknown): unknown;
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  /** Parsed/transformed data on success */
-  data?: Record<string, unknown>;
-  /** Human-readable error message on failure */
-  error?: string;
-}
-
-// ============================================================================
-// validateToolInput
-// ============================================================================
-
-/**
- * Validate tool input args against a schema with a .parse() method.
- * Returns parsed/transformed data on success, error message on failure.
- * If schema does not have a .parse() method, returns { valid: true } (pass-through).
- */
-export function validateToolInput(
-  schema: ParseableSchema,
-  args: Record<string, unknown>,
-): ValidationResult {
-  if (typeof schema?.parse !== 'function') {
-    return { valid: true, data: args };
-  }
-
-  try {
-    const parsed = schema.parse(args);
-    return {
-      valid: true,
-      data: (parsed as Record<string, unknown>) ?? args,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { valid: false, error: message };
-  }
-}
+export { validateToolInput };
 
 // ============================================================================
 // zodToGeminiParameters — Zod v4 implementation

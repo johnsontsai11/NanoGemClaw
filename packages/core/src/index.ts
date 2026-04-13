@@ -9,3 +9,4 @@ export { safeCompare } from './safe-compare.js';
 export * from './i18n-types.js';
 export * from './validate.js';
 export * from './sanitize.js';
+export * from './gemini-registry.js';

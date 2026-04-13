@@ -7,7 +7,7 @@
 
 import path from 'path';
 import fs from 'fs';
-import { logger, scanForInjection } from '@nanogemclaw/core';
+import { logger, scanForInjection, registerInputSchema, clearInputSchemaRegistry } from '@nanogemclaw/core';
 import type {
   NanoPlugin,
   PluginApi,
@@ -63,11 +63,14 @@ registerInternalPlugin({
         typeof ctx.result === 'string' ? ctx.result : JSON.stringify(ctx.result);
       const scan = scanForInjection(text);
       if (scan.status === 'suspicious') {
-        logger.warn('Potential prompt injection detected in tool result', {
-          toolName: ctx.toolName,
-          patterns: scan.patterns,
-          groupFolder: ctx.groupFolder,
-        });
+        logger.warn(
+          {
+            toolName: ctx.toolName,
+            patterns: scan.patterns,
+            groupFolder: ctx.groupFolder,
+          },
+          'Potential prompt injection detected in tool result',
+        );
         if (moduleEventBus) {
           moduleEventBus.emit('security:injection-detected', {
             toolName: ctx.toolName,
@@ -100,13 +103,13 @@ function createPluginApi(
 ): PluginApi {
   const pluginLogger = {
     info: (msg: string, ...args: unknown[]) =>
-      logger.info({ plugin: pluginId }, msg, ...args),
+      logger.info(args.length > 0 ? { plugin: pluginId, args } : { plugin: pluginId }, msg),
     warn: (msg: string, ...args: unknown[]) =>
-      logger.warn({ plugin: pluginId }, msg, ...args),
+      logger.warn(args.length > 0 ? { plugin: pluginId, args } : { plugin: pluginId }, msg),
     error: (msg: string, ...args: unknown[]) =>
-      logger.error({ plugin: pluginId }, msg, ...args),
+      logger.error(args.length > 0 ? { plugin: pluginId, args } : { plugin: pluginId }, msg),
     debug: (msg: string, ...args: unknown[]) =>
-      logger.debug({ plugin: pluginId }, msg, ...args),
+      logger.debug(args.length > 0 ? { plugin: pluginId, args } : { plugin: pluginId }, msg),
   };
 
   const pluginDataDir = path.join(dataDir, 'plugins', pluginId);
@@ -175,15 +178,28 @@ export async function loadPlugins(
  * Sort plugins so that dependencies load before dependents.
  * Falls back to original order for plugins without dependsOn or on cycles.
  */
+function getPluginId(source: string): string {
+  // If it's a bare specifier (npm package), use it directly
+  if (!source.startsWith('.') && !path.isAbsolute(source)) {
+    return source.replace(/^@nanogemclaw-plugin\//, '');
+  }
+  // If it's a file path, try to get the plugin directory name
+  const parts = source.split(path.sep);
+  const pluginsIdx = parts.lastIndexOf('plugins');
+  if (pluginsIdx >= 0 && pluginsIdx < parts.length - 1) {
+    return parts[pluginsIdx + 1];
+  }
+  // Fallback to filename without extension
+  return parts.pop()?.replace(/\.(ts|js|mjs|cjs)$/, '') ?? source;
+}
+
 function topoSortPlugins<T extends { source: string; dependsOn?: string[] }>(
   plugins: T[],
 ): T[] {
-  // Build a map from plugin source basename (assumed to be the plugin ID) to entry
+  // Build a map from plugin ID to entry
   const byId = new Map<string, T>();
   for (const p of plugins) {
-    // Use last path segment or full source as ID
-    const id = p.source.split('/').pop()?.replace(/^@nanogemclaw-plugin\//, '') ?? p.source;
-    byId.set(id, p);
+    byId.set(getPluginId(p.source), p);
   }
 
   const sorted: T[] = [];
@@ -191,11 +207,14 @@ function topoSortPlugins<T extends { source: string; dependsOn?: string[] }>(
   const visiting = new Set<string>(); // cycle detection
 
   function visit(plugin: T): void {
-    const id = plugin.source.split('/').pop()?.replace(/^@nanogemclaw-plugin\//, '') ?? plugin.source;
+    const id = getPluginId(plugin.source);
     if (visited.has(id)) return;
     if (visiting.has(id)) {
       // Cycle detected — skip to break the cycle
-      logger.warn({ plugin: id }, 'Plugin dependency cycle detected, loading in original order');
+      logger.warn(
+        { plugin: id },
+        'Plugin dependency cycle detected, loading in original order',
+      );
       return;
     }
     visiting.add(id);
@@ -523,19 +542,15 @@ export function getPluginGeminiTools(): Array<
   const tools = getLoadedPlugins().flatMap((p) => p.plugin.geminiTools ?? []);
 
   // Populate inputSchemaRegistry for tools that declare inputSchema.
-  // Dynamic import avoids pulling config.ts into test environments at module-load time.
-  void import('../../src/gemini-tools.js')
-    .then(({ registerInputSchema, clearInputSchemaRegistry }) => {
-      clearInputSchemaRegistry();
-      for (const tool of tools) {
-        if (tool.inputSchema && typeof tool.inputSchema.parse === 'function') {
-          registerInputSchema(tool.name, tool.inputSchema as { parse(data: unknown): unknown });
-        }
-      }
-    })
-    .catch((err: unknown) => {
-      logger.warn({ err }, 'Failed to populate inputSchemaRegistry');
-    });
+  clearInputSchemaRegistry();
+  for (const tool of tools) {
+    if (tool.inputSchema && typeof tool.inputSchema.parse === 'function') {
+      registerInputSchema(
+        tool.name,
+        tool.inputSchema as { parse(data: unknown): unknown },
+      );
+    }
+  }
 
   return tools;
 }

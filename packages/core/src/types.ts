@@ -6,6 +6,19 @@ export interface ToolResponse {
   _meta?: Record<string, unknown>;
 }
 
+/** Structural type matching any schema with a .parse() method */
+export interface ParseableSchema {
+  parse(data: unknown): unknown;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  /** Parsed/transformed data on success */
+  data?: Record<string, unknown>;
+  /** Human-readable error message on failure */
+  error?: string;
+}
+
 export interface AdditionalMount {
   hostPath: string; // Absolute path on host (supports ~ for home)
   containerPath: string; // Path inside container (under /workspace/extra/)

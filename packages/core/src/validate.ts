@@ -41,3 +41,28 @@ export function stripControlChars(input: string): string {
     // eslint-disable-next-line no-control-regex
     return input.replace(/[\x00-\x1F\x7F\x80-\x9F]/g, '');
 }
+
+/**
+ * Validate tool input args against a schema with a .parse() method.
+ * Returns parsed/transformed data on success, error message on failure.
+ * If schema does not have a .parse() method, returns { valid: true } (pass-through).
+ */
+export function validateToolInput(
+  schema: import('./types.js').ParseableSchema,
+  args: Record<string, unknown>,
+): import('./types.js').ValidationResult {
+  if (typeof schema?.parse !== 'function') {
+    return { valid: true, data: args };
+  }
+
+  try {
+    const parsed = schema.parse(args);
+    return {
+      valid: true,
+      data: (parsed as Record<string, unknown>) ?? args,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { valid: false, error: message };
+  }
+}
