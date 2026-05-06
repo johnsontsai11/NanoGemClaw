@@ -429,6 +429,11 @@ ${isMain ? `4. TO REGISTER A GROUP (main only) - Write to /workspace/ipc/tasks/:
    - "叫我小明" → {"type":"set_preference","key":"nickname","value":"小明"}
    - "我喜歡簡潔的回答" → {"type":"set_preference","key":"response_style","value":"concise"}
 
+7. TO SEND A DOCUMENT/FILE ATTACHMENT - Write to /workspace/ipc/messages/:
+   {"type":"send_document","chatJid":"${chatJid}","file_path":"/workspace/ipc/work_report.tsv","caption":"optional caption","timestamp":"..."}
+   IMPORTANT: The file MUST be saved inside /workspace/ipc/ (NOT /tmp/) so the host can access it.
+   Example workflow: (1) Write file to /workspace/ipc/work_report.tsv, (2) Write IPC message with file_path="/workspace/ipc/work_report.tsv"
+
 WEB BROWSING:
 You have access to the \`agent-browser\` CLI tool for advanced web interaction (Javascript, screenshots, etc).
 Documentation is available at: \`/workspace/docs/agent-browser.md\`.

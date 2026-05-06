@@ -62,6 +62,7 @@ const EXPLICIT_INTENT_PATTERNS: Record<string, RegExp> = {
     /畫|圖片|生成.*圖|產生.*圖|image|draw|picture|photo|illustrat|pic/i,
   schedule_task:
     /排程|定時|定期|提醒|每天|每週|每月|每小時|schedule|remind|recurring|timer|cron|設[定置].*任務|建立.*任務|加.*任務/i,
+  execute_bash_script: /工作報告|報告|report|bash|command|shell|python|script/i,
 };
 
 /** Check if a tool call has explicit user intent based on the user's prompt. */
@@ -280,12 +281,9 @@ Only suggest follow-ups when they genuinely add value. Do not suggest them for s
 You are in direct conversation mode. IMPORTANT RULES:
 1. ONLY use functions from your function declarations list
 2. Do NOT call send_message or mcp__nanoclaw__send_message
-3. Do NOT call ANY function unless the user's CURRENT message EXPLICITLY requests that action — EXCEPT remember_fact, which you may call proactively to store important user information
-4. If the user asks a QUESTION, respond with TEXT only — do NOT call functions
-5. NEVER schedule tasks, generate images, or change preferences based on conversation history
-6. When in doubt, respond with text instead of calling a function
-7. For task-related questions (有幾個/有哪些/列出/查看 tasks), you may call list_tasks to gather info, but NEVER call cancel_task/pause_task/resume_task — those are destructive actions
-8. NEVER call cancel_task, pause_task, or resume_task UNLESS the user's current message contains an explicit action verb like 取消/刪除/暫停/恢復/停止`;
+3. ONLY call destructive tools (cancel_task, pause_task, resume_task) when explicitly requested by the user.
+4. For all other tools, including bash and list_tasks, you ARE authorized to use them proactively when necessary to fulfill the user's request.
+5. You MUST use the bash tool to execute git_reporter.py for work reports as specifically instructed in your [SKILLS] section. Do NOT claim you cannot do this.`;
     }
 
     const knowledgePromise = (async () => {
@@ -430,6 +428,10 @@ You are in direct conversation mode. IMPORTANT RULES:
 
     if (fnDeclarations.length > 0) {
       tools.push({ functionDeclarations: fnDeclarations });
+      logger.info(
+        { group: group.name, tools: fnDeclarations.map((d: any) => d.name) },
+        'Fast path: sending tools to model',
+      );
     }
     // Gemini API Key mode: built-in tools (google_search) and custom tools
     // (Function Calling) cannot be combined in the same request.

@@ -154,7 +154,25 @@ export function startIpcWatcher(): void {
                     'Unauthorized IPC message attempt blocked',
                   );
                 }
+              } else if (data.type === 'send_document' && data.chatJid && data.file_path) {
+                // The container writes files to /workspace/ipc/ which maps to
+                // DATA_DIR/ipc/<groupFolder>/ on the host. Remap the path.
+                const containerIpcPrefix = '/workspace/ipc/';
+                let resolvedFilePath: string = data.file_path;
+                if (data.file_path.startsWith(containerIpcPrefix)) {
+                  const relative = data.file_path.slice(containerIpcPrefix.length);
+                  resolvedFilePath = path.join(ipcBaseDir, sourceGroup, relative);
+                }
+                const remappedData = { ...data, file_path: resolvedFilePath };
+                await processTaskIpc(remappedData, sourceGroup, isMain);
+                ipcMessageSentChats.add(data.chatJid);
+                logger.info(
+                  { chatId: data.chatJid, file: resolvedFilePath, sourceGroup },
+                  'IPC send_document dispatched',
+                );
               }
+
+
               fs.unlinkSync(filePath);
             } catch (err) {
               logger.error(
