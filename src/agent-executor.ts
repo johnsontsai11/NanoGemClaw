@@ -104,6 +104,19 @@ export async function runAgent(
           : i18nTf('usingTool', { toolName: info.toolName || '' }, groupLang);
         await editMessageText(chatId, statusMsg.message_id, progressText);
       } else if (info.type === 'message') {
+        // If the model is generating TSV report content, show a friendly
+        // status instead of streaming raw tab-separated data into the bubble.
+        const snapshot = info.contentSnapshot || '';
+        const isTsvContent = snapshot.includes('Date\tProject\tItem\tHours') ||
+          /^```(?:tsv|csv)/im.test(snapshot);
+        if (isTsvContent) {
+          await editMessageText(
+            chatId,
+            statusMsg.message_id,
+            `📊 ${i18nTf('thinking', undefined, groupLang)}...`,
+          );
+          return;
+        }
         // Use streaming for long responses (>100 chars)
         if (info.contentSnapshot && info.contentSnapshot.length > 100) {
           // Check rate limit before editing
@@ -269,7 +282,60 @@ export async function runAgent(
           'Fast path failed, falling back to container',
         );
       } else {
-        return output.result;
+        const result = output.result;
+
+        // ── TSV Report Auto-Send ──────────────────────────────────────────────
+        // If the fast-path response contains TSV work-report data (starts with
+        // the expected header or a markdown tsv code block), extract it,
+        // save to a temp file, and send as a Telegram document attachment.
+        // This bypasses the requirement for the model to call send_document.
+        if (result) {
+          const TSV_HEADER = 'Date\tProject\tItem\tHours';
+          let tsvContent: string | null = null;
+
+          // Case 1: response is a markdown code block   ```tsv ... ```
+          const codeBlockMatch = result.match(/```(?:tsv|csv)?\s*\n?(Date[\s\S]+?)```/i);
+          if (codeBlockMatch) {
+            tsvContent = codeBlockMatch[1].trim();
+          }
+          // Case 2: raw TSV (first non-blank line is the header)
+          else if (result.trimStart().startsWith(TSV_HEADER)) {
+            tsvContent = result.trim();
+          }
+
+          if (tsvContent && tsvContent.includes(TSV_HEADER)) {
+            try {
+              const tmpPath = path.join(process.cwd(), 'data', 'work_report.tsv');
+              fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
+              fs.writeFileSync(tmpPath, tsvContent, 'utf-8');
+
+              const { handleSendDocument } = await import('./ipc-handlers/send-document.js');
+              const docResult = await handleSendDocument(
+                { file_path: tmpPath, caption: '📊 Work Report' },
+                ipcContext,
+              );
+
+              if (docResult.success) {
+                logger.info({ group: group.name }, 'TSV work report auto-sent as document');
+                // Signal to message-handler that the response was already delivered
+                // so it deletes the status message instead of showing ❌ error.
+                const { getIpcMessageSentChats } = await import('./state.js');
+                getIpcMessageSentChats().add(chatId);
+                return null;
+              } else {
+                logger.warn(
+                  { group: group.name, error: docResult.error },
+                  'TSV auto-send failed, falling back to text',
+                );
+              }
+            } catch (err) {
+              logger.warn({ group: group.name, err }, 'TSV auto-send error');
+            }
+          }
+        }
+        // ── end TSV Report Auto-Send ──────────────────────────────────────────
+
+        return result;
       }
     }
 

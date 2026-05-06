@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     ffmpeg \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Chromium path for browser automation

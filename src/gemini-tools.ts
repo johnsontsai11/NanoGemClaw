@@ -10,6 +10,9 @@
  */
 
 import { InputFile } from 'grammy';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+const execAsync = promisify(exec);
 import type { IpcContext, ToolMetadata } from './types.js';
 import type { ToolResponse } from '@nanogemclaw/core';
 import { logger, registerInputSchema, clearInputSchemaRegistry, getInputSchema } from '@nanogemclaw/core';
@@ -126,6 +129,58 @@ export function registerPluginTools(tools: any[]): void {
   pluginToolDeclarations = tools;
   clearDeclarationCache();
 }
+
+// ============================================================================
+// Tool Declaration Templates
+// ============================================================================
+
+const BASH_TOOL_DECLARATION = {
+  name: 'execute_bash_script',
+  description:
+    'Run a bash command or script. ' +
+    'Authorized for data retrieval, log extraction, and specialized system tasks. ' +
+    'Always provides the results of the command execution.',
+  parameters: {
+    type: 'OBJECT',
+    properties: {
+      command: {
+        type: 'STRING',
+        description: 'The bash command or script to execute',
+      },
+    },
+    required: ['command'],
+  },
+  _metadata: {
+    readOnly: false,
+    requiresExplicitIntent: false,
+    dangerLevel: 'moderate',
+  } as ToolMetadata,
+};
+
+const IMAGE_GEN_TOOL_DECLARATION = (isAdmin: boolean) => ({
+  name: 'generate_image',
+  description:
+    'Generate an image based on a text description. ' +
+    (isAdmin
+      ? 'ONLY call this when the admin EXPLICITLY asks to create, draw, or generate an image.'
+      : 'ONLY call this when the user EXPLICITLY asks to create, draw, or generate an image in their CURRENT message. ' +
+        'Do NOT call this based on previous conversation history or when the user is asking a text question.'),
+  parameters: {
+    type: 'OBJECT',
+    properties: {
+      prompt: {
+        type: 'STRING',
+        description: 'A detailed description of the image to generate',
+      },
+    },
+    required: ['prompt'],
+  },
+  _metadata: {
+    readOnly: false,
+    requiresExplicitIntent: true,
+    dangerLevel: 'moderate',
+  } as ToolMetadata,
+});
 
 // ============================================================================
 // Function Declarations for Gemini
@@ -313,28 +368,8 @@ export function buildFunctionDeclarations(
           dangerLevel: 'moderate',
         } as ToolMetadata,
       },
-      // Admin also gets generate_image
-      {
-        name: 'generate_image',
-        description:
-          'Generate an image based on a text description. ' +
-          'ONLY call this when the admin EXPLICITLY asks to create, draw, or generate an image.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            prompt: {
-              type: 'STRING',
-              description: 'A detailed description of the image to generate',
-            },
-          },
-          required: ['prompt'],
-        },
-        _metadata: {
-          readOnly: false,
-          requiresExplicitIntent: true,
-          dangerLevel: 'moderate',
-        } as ToolMetadata,
-      },
+      IMAGE_GEN_TOOL_DECLARATION(true),
+      BASH_TOOL_DECLARATION,
     ];
 
     // Register metadata — mark all admin tools with adminOnly flag
@@ -474,28 +509,8 @@ export function buildFunctionDeclarations(
         dangerLevel: 'destructive',
       } as ToolMetadata,
     },
-    {
-      name: 'generate_image',
-      description:
-        'Generate an image based on a text description. ' +
-        'ONLY call this when the user EXPLICITLY asks to create, draw, or generate an image in their CURRENT message. ' +
-        'Do NOT call this based on previous conversation history or when the user is asking a text question.',
-      parameters: {
-        type: 'OBJECT',
-        properties: {
-          prompt: {
-            type: 'STRING',
-            description: 'A detailed description of the image to generate',
-          },
-        },
-        required: ['prompt'],
-      },
-      _metadata: {
-        readOnly: false,
-        requiresExplicitIntent: true,
-        dangerLevel: 'moderate',
-      } as ToolMetadata,
-    },
+    IMAGE_GEN_TOOL_DECLARATION(false),
+    BASH_TOOL_DECLARATION,
     {
       name: 'set_preference',
       description:
@@ -527,6 +542,30 @@ export function buildFunctionDeclarations(
       _metadata: {
         readOnly: false,
         requiresExplicitIntent: true,
+        dangerLevel: 'moderate',
+      } as ToolMetadata,
+    },
+
+    {
+      name: 'send_document',
+      description: 'Send a file as a document attachment to the current chat. Use this to send reports, files, and exported data to the user.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          file_path: {
+            type: 'STRING',
+            description: 'The absolute path to the file on disk to send to the user',
+          },
+          caption: {
+            type: 'STRING',
+            description: 'Optional caption for the file attachment',
+          },
+        },
+        required: ['file_path'],
+      },
+      _metadata: {
+        readOnly: false,
+        requiresExplicitIntent: false,
         dangerLevel: 'moderate',
       } as ToolMetadata,
     },
@@ -930,6 +969,19 @@ export async function executeFunctionCall(
           return { name, response: { success: true, key: args.key } };
         }
 
+
+        case 'send_document': {
+          const { dispatchIpc } = await import('./ipc-handlers/index.js');
+          await dispatchIpc(
+            { type: 'send_document', ...args, group: context.sourceGroup, groupFolder: groupFolder },
+            context
+          );
+          return {
+            name,
+            response: { success: true, message: 'Document sent to chat.' }
+          };
+        }
+
         case 'remember_fact': {
           const { upsertFact } = await import('./db.js');
           const factKey = String(args.key)
@@ -1285,6 +1337,40 @@ export async function executeFunctionCall(
             name,
             response: { success: false, error: 'Registrar not available' },
           };
+        }
+
+        case 'bash':
+        case 'run_bash_command':
+        case 'execute_bash_script': {
+          let cmd = args.command;
+          // Path mapping: map container-style /workspace/docs/ to host container/skills/
+          if (cmd.includes('/workspace/docs/')) {
+            cmd = cmd.replace(/\/workspace\/docs\//g, 'container/skills/');
+          }
+
+          try {
+            const { stdout, stderr } = await execAsync(cmd, {
+              cwd: process.cwd(),
+              env: { ...process.env, PATH: process.env.PATH },
+            });
+            return {
+              name,
+              response: {
+                success: true,
+                stdout: stdout.trim(),
+                stderr: stderr.trim(),
+              },
+            };
+          } catch (err: any) {
+            return {
+              name,
+              response: {
+                success: false,
+                error: err.message,
+                stderr: err.stderr?.trim(),
+              },
+            };
+          }
         }
 
         default: {

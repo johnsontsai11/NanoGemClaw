@@ -81,6 +81,7 @@ export async function loadBuiltinHandlers(): Promise<void> {
   const { GenerateImageHandler } = await import('./generate-image.js');
   const { SetPreferenceHandler } = await import('./set-preference.js');
   const { SuggestActionsHandler } = await import('./suggest-actions.js');
+  const { SendDocumentHandler } = await import('./send-document.js');
 
   registerIpcHandler(ScheduleTaskHandler);
   registerIpcHandler(PauseTaskHandler);
@@ -90,6 +91,7 @@ export async function loadBuiltinHandlers(): Promise<void> {
   registerIpcHandler(GenerateImageHandler);
   registerIpcHandler(SetPreferenceHandler);
   registerIpcHandler(SuggestActionsHandler);
+  registerIpcHandler(SendDocumentHandler);
 
   logger.info({ count: handlers.size }, 'Built-in IPC handlers loaded');
 }

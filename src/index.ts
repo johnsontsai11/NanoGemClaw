@@ -159,8 +159,8 @@ async function main(): Promise<void> {
     getPluginToolMetadataEntries,
   } = await import(pluginLoaderPath);
 
-  const manifestPath = path.join(DATA_DIR, 'plugins.json');
-  const projectRoot = path.resolve(DATA_DIR, '..');
+  const manifestPath = path.join(DATA_DIR || path.join(process.cwd(), 'data'), 'plugins.json');
+  const projectRoot = path.resolve(DATA_DIR || process.cwd(), '..');
   await discoverAndLoadPlugins(
     manifestPath,
     {
@@ -171,8 +171,8 @@ async function main(): Promise<void> {
       dataDir: DATA_DIR,
     },
     {
-      pluginsDir: path.join(projectRoot, 'plugins'),
-      nodeModulesDir: path.join(projectRoot, 'node_modules'),
+      pluginsDir: path.join(projectRoot || process.cwd(), 'plugins'),
+      nodeModulesDir: path.join(projectRoot || process.cwd(), 'node_modules'),
     },
   );
 
