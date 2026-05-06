@@ -1,0 +1,42 @@
+# Dependency Modules
+node_modules/
+bower_components/
+
+# Build Artifacts
+dist/
+build/
+out/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Binary Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+*.zip
+*.tar.gz
+*.mp4
+*.mov
+
+# Secrets and Data
+.env
+*.keys.json
+data/
+store/
+logs/
+groups/
+scratch/
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+.git/
+.claude/
+.gemini/
