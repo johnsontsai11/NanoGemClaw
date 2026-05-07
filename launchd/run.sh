@@ -6,7 +6,7 @@
 cd /Volumes/DevDisk/NanoGemClaw
 
 # Set up environment
-export PATH="/Users/johnsontsai/.nvm/versions/node/v24.12.0/bin:/usr/local/bin:/usr/bin:/bin"
+export PATH="/Users/johnsontsai/.nvm/versions/node/v24.15.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export HOME="/Users/johnsontsai"
 export NODE_ENV=production
 
@@ -22,4 +22,4 @@ export NODE_OPTIONS="--dns-result-order=ipv4first"
 
 # Start the bot using tsx (via npm run dev)
 # This ensures all TypeScript packages are resolved correctly
-exec npm run dev
+exec /Users/johnsontsai/.nvm/versions/node/v24.15.0/bin/npm run dev

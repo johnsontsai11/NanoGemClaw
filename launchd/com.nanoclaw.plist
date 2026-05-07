@@ -17,7 +17,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/Users/johnsontsai/.nvm/versions/node/v24.12.0/bin:/Users/johnsontsai/.local/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <string>/Users/johnsontsai/.nvm/versions/node/v24.15.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
         <key>HOME</key>
         <string>/Users/johnsontsai</string>
         <key>ASSISTANT_NAME</key>
