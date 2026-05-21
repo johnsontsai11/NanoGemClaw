@@ -54,11 +54,20 @@ def generate_chart(output_path):
     
     # Right Axis: Retail Sentiment Ratio
     ax2 = ax1.twinx()
-    color_ratio = '#ff6b35'
-    ax2.plot(df['date_label'], df['ratio'], color=color_ratio, linewidth=2, label='Retail Ratio (%)')
-    ax2.plot(df['date_label'], df['ma5'], color='white', linewidth=1, linestyle='--', alpha=0.7, label='Ratio 5MA')
-    ax2.set_ylabel('Retail Sentiment (%)', color=color_ratio, fontsize=12)
+    color_ratio = '#ff8800'  # Bright orange for visibility
+    ax2.plot(df['date_label'], df['ratio'], color=color_ratio, linewidth=4,
+             label='散戶比例 (%)', marker='o', markersize=6, markeredgecolor='white', markeredgewidth=1.5)
+    ax2.plot(df['date_label'], df['ma5'], color='white', linewidth=2, linestyle='--', alpha=0.8, label='5日均線')
+    ax2.set_ylabel('散戶多空比 (%)', color=color_ratio, fontsize=13, fontweight='bold')
     ax2.tick_params(axis='y', labelcolor=color_ratio)
+
+    # Annotate latest ratio (IMPORTANT: make it very visible)
+    latest_ratio = df['ratio'].iloc[-1]
+    ax2.annotate(f'{latest_ratio:.1f}%',
+                 xy=(df['date_label'].iloc[-1], latest_ratio),
+                 xytext=(15, 0), textcoords='offset points',
+                 color=color_ratio, fontweight='bold', fontsize=14,
+                 bbox=dict(boxstyle='round,pad=0.5', facecolor='black', edgecolor=color_ratio, linewidth=2))
     
     # Horizontal Threshold Lines (Taiwan-calibrated, Taiwan color scheme)
     ax2.axhline(y=0, color='#ff3333', linestyle=':', alpha=0.5, label='零線 (0%)')
@@ -104,6 +113,10 @@ def generate_chart(output_path):
             bbox=dict(boxstyle='round,pad=0.4', facecolor=bg_color, alpha=0.8)
         )
     
+    # Set Y-axis limits for better visibility
+    # Right axis (ratio): extend range to -15% to 60% so the line is more centered
+    ax2.set_ylim(-15, 60)
+
     # Titles and Formatting
     plt.title('TMF Retail Sentiment Trend', fontsize=14, pad=20, color='white')
     fig.tight_layout()
