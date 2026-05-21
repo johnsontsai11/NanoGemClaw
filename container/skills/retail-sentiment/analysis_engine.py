@@ -168,7 +168,7 @@ def format_report(report):
         text += f"● 趨勢方向：{trend_emoji.get(report['trend'], report['trend'])}\n"
 
     text += f"● 判斷結果：{report['signal']}\n\n"
-    text += f"🔍 蔡森型態進階分析：\n{report['commentary']}\n\n"
+    text += f"🔍 趨勢型態分析：\n{report['commentary']}\n\n"
     text += f"💡 操盤手提醒：{report['reminder']}"
 
     return text
