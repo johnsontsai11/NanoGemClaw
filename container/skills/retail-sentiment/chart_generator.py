@@ -57,16 +57,19 @@ def generate_chart(output_path):
     ax2.set_ylabel('Retail Sentiment (%)', color=color_ratio, fontsize=12)
     ax2.tick_params(axis='y', labelcolor=color_ratio)
     
-    # Horizontal Threshold Lines
-    ax2.axhline(y=-15, color='#ff4444', linestyle=':', alpha=0.6)
-    ax2.axhline(y=15, color='#44ff44', linestyle=':', alpha=0.6)
-    ax2.axhline(y=0, color='white', linestyle='-', alpha=0.2)
-    
+    # Horizontal Threshold Lines (Taiwan-calibrated)
+    ax2.axhline(y=-10, color='#ff4444', linestyle=':', alpha=0.6, label='Short Squeeze (-10%)')
+    ax2.axhline(y=30, color='#ffaa00', linestyle=':', alpha=0.6, label='Elevated Long (30%)')
+    ax2.axhline(y=40, color='#ff4444', linestyle=':', alpha=0.8, label='Extreme Long (40%)')
+    ax2.axhline(y=20, color='white', linestyle='-', alpha=0.2, label='Mean (~20%)')
+
     # Shading extreme zones
-    ax2.fill_between(df['date_label'], -15, df['ratio'], where=(df['ratio'] < -15), 
+    ax2.fill_between(df['date_label'], -10, df['ratio'], where=(df['ratio'] < -10),
                     color='#ff4444', alpha=0.2, label='Short Squeeze Zone')
-    ax2.fill_between(df['date_label'], 15, df['ratio'], where=(df['ratio'] > 15), 
-                    color='#44ff44', alpha=0.2, label='Long Liquidation Zone')
+    ax2.fill_between(df['date_label'], 40, df['ratio'], where=(df['ratio'] > 40),
+                    color='#ff4444', alpha=0.2, label='Extreme Long Zone')
+    ax2.fill_between(df['date_label'], 30, df['ratio'], where=((df['ratio'] > 30) & (df['ratio'] <= 40)),
+                    color='#ffaa00', alpha=0.15, label='Warning Zone')
     
     # Titles and Formatting
     plt.title('TMF Retail Sentiment Trend (Tsai Sen Methodology)', fontsize=14, pad=20, color='white')
