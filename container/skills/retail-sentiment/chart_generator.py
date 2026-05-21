@@ -61,18 +61,28 @@ def generate_chart(output_path):
     ax2.tick_params(axis='y', labelcolor=color_ratio)
     
     # Horizontal Threshold Lines (Taiwan-calibrated, Taiwan color scheme)
-    ax2.axhline(y=-10, color='#ff3333', linestyle=':', alpha=0.6, label='軋空線 (-10%)')
+    ax2.axhline(y=0, color='#ff3333', linestyle=':', alpha=0.5, label='零線 (0%)')
+    ax2.axhline(y=10, color='#4488ff', linestyle=':', alpha=0.5, label='安全下限 (10%)')
     ax2.axhline(y=30, color='#ffaa00', linestyle=':', alpha=0.6, label='警示線 (30%)')
     ax2.axhline(y=40, color='#00cc66', linestyle=':', alpha=0.8, label='超買線 (40%)')
-    ax2.axhline(y=20, color='white', linestyle='-', alpha=0.2, label='均值 (~20%)')
+    ax2.axhline(y=20, color='white', linestyle='-', alpha=0.3, label='均值 (20%)')
 
-    # Shading extreme zones (Taiwan convention: Green=danger/down, Red=squeeze/up)
-    ax2.fill_between(df['date_label'], -10, df['ratio'], where=(df['ratio'] < -10),
-                    color='#ff3333', alpha=0.2, label='軋空區（上漲）')
+    # Shading zones (Taiwan convention: Green=danger/down, Red=squeeze/up, Blue=safe)
+    # Safe zone (10-30%): Normal operating range
+    ax2.fill_between(df['date_label'], 10, 30,
+                    color='#4488ff', alpha=0.08, label='安全區 (10-30%)')
+
+    # Extreme zones
+    ax2.fill_between(df['date_label'], 0, df['ratio'], where=(df['ratio'] < 0),
+                    color='#ff3333', alpha=0.2, label='軋空區（易漲）')
     ax2.fill_between(df['date_label'], 40, df['ratio'], where=(df['ratio'] > 40),
                     color='#00cc66', alpha=0.25, label='超買區（易跌）')
+
+    # Warning zones
     ax2.fill_between(df['date_label'], 30, df['ratio'], where=((df['ratio'] > 30) & (df['ratio'] <= 40)),
                     color='#ffdd44', alpha=0.15, label='警示區')
+    ax2.fill_between(df['date_label'], 0, df['ratio'], where=((df['ratio'] >= 0) & (df['ratio'] < 10)),
+                    color='#ffdd44', alpha=0.12, label='偏低區')
 
     # Annotate significant ratio changes (diff > 10%, Taiwan color: red=up, green=down)
     df['diff'] = df['ratio'].diff()

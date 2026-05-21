@@ -95,8 +95,8 @@ def analyze():
     commentary = "目前籌碼分布相對平衡，建議回歸量價型態觀察，留意關鍵頸線位置。"
     reminder = f"守住 {int(today['price']):,} 點支撐，量縮不跌視為強勢。"
 
-    # Taiwan-calibrated thresholds (retail structurally bullish)
-    if ratio < -10:  # Institutions heavily long (rare for Taiwan)
+    # Taiwan-calibrated thresholds with safe zone (10-30%)
+    if ratio < 0:  # Retail net short (very rare for Taiwan)
         if diff > 15:
             signal = "⚠️ 警告：空頭投降"
             commentary = "空單出現大規模回補（投降），雖然價格可能創新高，但籌碼動能正在衰退，需嚴防高檔反轉構築 M 頭右肩。"
@@ -105,11 +105,19 @@ def analyze():
             signal = "🔥 趨勢：強勢軋空"
             commentary = "散戶持續看空並持有大量空單，法人反向拉抬。目前處於強勢軋空階段，不宜預設高點。"
             reminder = "順勢操作，只要散戶多空比維持負值，軋空動能仍在。"
+    elif ratio < 10:  # Retail unusually low (0-10%)
+        signal = "🔵 偏低：散戶偏空"
+        commentary = "散戶多單比例偏低，顯示市場偏空氣氛。若為下跌後的低檔區，可能是底部訊號。"
+        reminder = "觀察價格是否止穩，等待量價配合的反彈訊號。"
+    elif ratio <= 30:  # Safe zone (10-30%)
+        signal = "✅ 安全：籌碼健康"
+        commentary = "散戶多空比處於健康範圍（10-30%），籌碼分布相對平衡，無明顯擁擠。此時應回歸技術面與基本面分析。"
+        reminder = f"正常操作，守住 {int(today['price']):,} 點支撐，依循技術訊號進出。"
     elif ratio > 40:  # Extreme retail long (Taiwan-specific threshold)
         signal = "❄️ 警示：極端多單擁擠"
         commentary = "散戶多單過度擁擠（比例 >40%），需嚴防多頭踩踏引發的快速修正。法人可能正在派發籌碼。"
         reminder = "高度風險，跌破關鍵支撐需果斷減碼，防範急殺。"
-    elif ratio > 30:  # Elevated retail long
+    elif ratio > 30:  # Elevated retail long (30-40%)
         signal = "⚠️ 注意：多單偏高"
         commentary = "散戶多單比例偏高，需留意法人動態。若出現價量背離或技術破位，殺盤風險增加。"
         reminder = "保守操作，嚴守停損紀律，不追高。"
