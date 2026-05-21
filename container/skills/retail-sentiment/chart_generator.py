@@ -6,6 +6,10 @@ import os
 import pandas as pd
 import numpy as np
 
+# Configure Chinese font support
+plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'PingFang TC', 'Heiti TC', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
+
 # Output directory for charts (runs on host)
 SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,17 +49,18 @@ def generate_chart(output_path):
     ax1.tick_params(axis='y', labelcolor=color_price)
     ax1.grid(True, alpha=0.1)
     
-    # Annotate latest price
+    # Annotate latest price (styled to match sentiment annotation)
     latest_price = df['price'].iloc[-1]
-    ax1.annotate(f'{int(latest_price):,}', 
+    ax1.annotate(f'{int(latest_price):,}',
                  xy=(df['date_label'].iloc[-1], latest_price),
-                 xytext=(10, 0), textcoords='offset points',
-                 color=color_price, fontweight='bold', fontsize=12)
+                 xytext=(-65, 0), textcoords='offset points',
+                 color=color_price, fontweight='bold', fontsize=14,
+                 bbox=dict(boxstyle='round,pad=0.5', facecolor='black', edgecolor=color_price, linewidth=2))
     
     # Right Axis: Retail Sentiment Ratio
     ax2 = ax1.twinx()
     color_ratio = '#ff8800'  # Bright orange for visibility
-    ax2.plot(df['date_label'], df['ratio'], color=color_ratio, linewidth=4,
+    ax2.plot(df['date_label'], df['ratio'], color=color_ratio, linewidth=2.5,
              label='散戶比例 (%)', marker='o', markersize=6, markeredgecolor='white', markeredgewidth=1.5)
     ax2.plot(df['date_label'], df['ma5'], color='white', linewidth=2, linestyle='--', alpha=0.8, label='5日均線')
     ax2.set_ylabel('散戶多空比 (%)', color=color_ratio, fontsize=13, fontweight='bold')
