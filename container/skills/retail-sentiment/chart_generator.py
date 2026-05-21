@@ -60,26 +60,28 @@ def generate_chart(output_path):
     ax2.set_ylabel('Retail Sentiment (%)', color=color_ratio, fontsize=12)
     ax2.tick_params(axis='y', labelcolor=color_ratio)
     
-    # Horizontal Threshold Lines (Taiwan-calibrated)
-    ax2.axhline(y=-10, color='#ff4444', linestyle=':', alpha=0.6, label='Short Squeeze (-10%)')
-    ax2.axhline(y=30, color='#ffaa00', linestyle=':', alpha=0.6, label='Elevated Long (30%)')
-    ax2.axhline(y=40, color='#ff4444', linestyle=':', alpha=0.8, label='Extreme Long (40%)')
-    ax2.axhline(y=20, color='white', linestyle='-', alpha=0.2, label='Mean (~20%)')
+    # Horizontal Threshold Lines (Taiwan-calibrated, Taiwan color scheme)
+    ax2.axhline(y=-10, color='#ff3333', linestyle=':', alpha=0.6, label='軋空線 (-10%)')
+    ax2.axhline(y=30, color='#ffaa00', linestyle=':', alpha=0.6, label='警示線 (30%)')
+    ax2.axhline(y=40, color='#00cc66', linestyle=':', alpha=0.8, label='超買線 (40%)')
+    ax2.axhline(y=20, color='white', linestyle='-', alpha=0.2, label='均值 (~20%)')
 
-    # Shading extreme zones
+    # Shading extreme zones (Taiwan convention: Green=danger/down, Red=squeeze/up)
     ax2.fill_between(df['date_label'], -10, df['ratio'], where=(df['ratio'] < -10),
-                    color='#ff4444', alpha=0.2, label='Short Squeeze Zone')
+                    color='#ff3333', alpha=0.2, label='軋空區（上漲）')
     ax2.fill_between(df['date_label'], 40, df['ratio'], where=(df['ratio'] > 40),
-                    color='#ff4444', alpha=0.2, label='Extreme Long Zone')
+                    color='#00cc66', alpha=0.25, label='超買區（易跌）')
     ax2.fill_between(df['date_label'], 30, df['ratio'], where=((df['ratio'] > 30) & (df['ratio'] <= 40)),
-                    color='#ffaa00', alpha=0.15, label='Warning Zone')
+                    color='#ffdd44', alpha=0.15, label='警示區')
 
-    # Annotate significant ratio changes (diff > 10%)
+    # Annotate significant ratio changes (diff > 10%, Taiwan color: red=up, green=down)
     df['diff'] = df['ratio'].diff()
     significant = df[df['diff'].abs() > 10]
 
     for idx in significant.index:
         row = df.loc[idx]
+        # Taiwan convention: ratio rising = more retail longs = danger (green), falling = safer (red)
+        bg_color = '#00aa44' if row['diff'] > 0 else '#dd3333'  # Green for up (danger), Red for down
         ax2.annotate(
             f"{row['diff']:+.1f}%",
             xy=(row['date_label'], row['ratio']),
@@ -87,9 +89,9 @@ def generate_chart(output_path):
             textcoords='offset points',
             ha='center',
             fontsize=9,
-            color='#ffff00',
+            color='white',
             weight='bold',
-            bbox=dict(boxstyle='round,pad=0.4', facecolor='red' if abs(row['diff']) > 15 else 'orange', alpha=0.8)
+            bbox=dict(boxstyle='round,pad=0.4', facecolor=bg_color, alpha=0.8)
         )
     
     # Titles and Formatting
