@@ -5,11 +5,11 @@ import socket
 
 def get_connection():
     """Create a connection to the PostgreSQL database using environment variables."""
-    host = os.getenv("POSTGRES_HOST", "192.168.147.2")
+    host = os.getenv("POSTGRES_HOST", "127.0.0.1")
     port = int(os.getenv("POSTGRES_PORT", "5432"))
     database = os.getenv("POSTGRES_DB", "stock_db")
     user = os.getenv("POSTGRES_USER", "ngc_postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "!6WzrAiQYRwIJFQy")
 
 
     # Retry logic for database availability
