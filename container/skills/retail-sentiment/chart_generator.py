@@ -93,7 +93,7 @@ def generate_chart(output_path):
         )
     
     # Titles and Formatting
-    plt.title('TMF Retail Sentiment Trend (Tsai Sen Methodology)', fontsize=14, pad=20, color='white')
+    plt.title('TMF Retail Sentiment Trend', fontsize=14, pad=20, color='white')
     fig.tight_layout()
     
     # Save chart
