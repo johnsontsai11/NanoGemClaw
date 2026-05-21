@@ -35,3 +35,7 @@ docs/learnfromproject.md
 
 # Playwright MCP
 .playwright-mcp/
+*.pyc
+.context-mode/
+.github/context-mode/
+container/skills/retail-sentiment/output/

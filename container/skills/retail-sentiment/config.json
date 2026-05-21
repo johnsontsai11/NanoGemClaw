@@ -1,0 +1,9 @@
+{
+  "contract_code": "TMF",
+  "lookback_days": 20,
+  "thresholds": {
+    "squeeze_zone": -15,
+    "liquidation_zone": 15,
+    "capitulation_diff": 10
+  }
+}

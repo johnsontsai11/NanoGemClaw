@@ -1,0 +1,15 @@
+name: nanogemclaw
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: stock-db
+    restart: always
+    env_file:
+      - ../.env
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+
+volumes:
+  timescaledb_data:

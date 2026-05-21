@@ -1343,9 +1343,12 @@ export async function executeFunctionCall(
         case 'run_bash_command':
         case 'execute_bash_script': {
           let cmd = args.command;
-          // Path mapping: map container-style /workspace/docs/ to host container/skills/
+          // Path mapping: map container-style paths to host paths for fast path execution
           if (cmd.includes('/workspace/docs/')) {
             cmd = cmd.replace(/\/workspace\/docs\//g, 'container/skills/');
+          }
+          if (cmd.includes('/workspace/scripts/')) {
+            cmd = cmd.replace(/\/workspace\/scripts\//g, 'scripts/');
           }
 
           try {

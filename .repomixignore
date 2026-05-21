@@ -40,3 +40,9 @@ scratch/
 .git/
 .claude/
 .gemini/
+*.lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.context-mode/
+*.log

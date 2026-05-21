@@ -62,7 +62,7 @@ const EXPLICIT_INTENT_PATTERNS: Record<string, RegExp> = {
     /畫|圖片|生成.*圖|產生.*圖|image|draw|picture|photo|illustrat|pic/i,
   schedule_task:
     /排程|定時|定期|提醒|每天|每週|每月|每小時|schedule|remind|recurring|timer|cron|設[定置].*任務|建立.*任務|加.*任務/i,
-  execute_bash_script: /工作報告|報告|report|bash|command|shell|python|script/i,
+  execute_bash_script: /工作報告|報告|report|bash|command|shell|python|script|散戶|籌碼|sentiment|analysis|分析/i,
 };
 
 /** Check if a tool call has explicit user intent based on the user's prompt. */

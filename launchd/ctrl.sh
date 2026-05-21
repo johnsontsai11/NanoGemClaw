@@ -32,12 +32,32 @@ case "$1" in
         ;;
     start)
         ts_echo "Starting launchd service..."
-        launchctl load "$PLIST_DEST_PATH"
-        ts_echo "Started."
+        # Ensure BOTH possible labels are enabled
+        launchctl enable "gui/$(id -u)/com.nanogemclaw" 2>/dev/null
+        
+        # Use bootstrap (modern) instead of load (deprecated)
+        BOOTSTRAP_OUT=$(launchctl bootstrap "gui/$(id -u)" "$PLIST_DEST_PATH" 2>&1)
+        BOOTSTRAP_EXIT=$?
+        
+        if [ $BOOTSTRAP_EXIT -eq 0 ]; then
+            ts_echo "Started."
+        elif echo "$BOOTSTRAP_OUT" | grep -q "Service already exists"; then
+            ts_echo "Service already loaded. Restarting..."
+            launchctl kickstart -k "gui/$(id -u)/com.nanogemclaw"
+            ts_echo "Started."
+        else
+            echo "Error: Bootstrap failed (Exit: $BOOTSTRAP_EXIT):"
+            echo "$BOOTSTRAP_OUT"
+            exit 1
+        fi
         ;;
     stop)
         ts_echo "Stopping launchd service..."
-        launchctl unload "$PLIST_DEST_PATH" &>/dev/null
+        # Try stopping by path
+        launchctl bootout "gui/$(id -u)" "$PLIST_DEST_PATH" 2>/dev/null
+        launchctl unload "$PLIST_DEST_PATH" 2>/dev/null
+        # Also try stopping explicitly by both possible labels to clear conflicts
+        launchctl bootout "gui/$(id -u)/com.nanogemclaw" 2>/dev/null
         ts_echo "Stopped."
         ;;
     restart)
