@@ -44,7 +44,9 @@ def generate_chart(output_path):
     
     # Left Axis: Price
     color_price = '#00d4ff'
-    ax1.plot(df['date_label'], df['price'], color=color_price, linewidth=2.5, label='TMF Price')
+    ax1.plot(df['date_label'], df['price'], color=color_price, linewidth=2.5,
+             label='TMF Price', marker='o', markersize=6,
+             markeredgecolor='white', markeredgewidth=1.5)
     ax1.set_ylabel('TMF Price', color=color_price, fontsize=12)
     ax1.tick_params(axis='y', labelcolor=color_price)
     ax1.grid(True, alpha=0.1)
@@ -53,7 +55,7 @@ def generate_chart(output_path):
     latest_price = df['price'].iloc[-1]
     ax1.annotate(f'{int(latest_price):,}',
                  xy=(df['date_label'].iloc[-1], latest_price),
-                 xytext=(-65, 0), textcoords='offset points',
+                 xytext=(10, 15), textcoords='offset points',
                  color=color_price, fontweight='bold', fontsize=14,
                  bbox=dict(boxstyle='round,pad=0.5', facecolor='black', edgecolor=color_price, linewidth=2))
     
@@ -63,7 +65,7 @@ def generate_chart(output_path):
     ax2.plot(df['date_label'], df['ratio'], color=color_ratio, linewidth=2.5,
              label='散戶比例 (%)', marker='o', markersize=6, markeredgecolor='white', markeredgewidth=1.5)
     ax2.plot(df['date_label'], df['ma5'], color='white', linewidth=2, linestyle='--', alpha=0.8, label='5日均線')
-    ax2.set_ylabel('散戶多空比 (%)', color=color_ratio, fontsize=13, fontweight='bold')
+    ax2.set_ylabel('Retail Sentiment (%)', color=color_ratio, fontsize=13, fontweight='bold')
     ax2.tick_params(axis='y', labelcolor=color_ratio)
 
     # Annotate latest ratio (IMPORTANT: make it very visible)
