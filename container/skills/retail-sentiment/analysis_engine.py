@@ -1,4 +1,4 @@
-from db import get_connection
+from db import get_connection, return_connection
 import os
 import json
 import psycopg2.extras
@@ -7,14 +7,57 @@ SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_latest_data(limit=20):
     conn = get_connection()
-    # Use DictCursor to mimic sqlite3.Row behavior
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    # Fetch in descending order to get latest, then reverse for chronological order
-    cursor.execute("SELECT * FROM tmf_daily ORDER BY date DESC LIMIT %s", (limit,))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return [dict(r) for r in reversed(rows)]
+    try:
+        # Use DictCursor to mimic sqlite3.Row behavior
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # Fetch in descending order to get latest, then reverse for chronological order
+        cursor.execute("SELECT * FROM tmf_daily ORDER BY date DESC LIMIT %s", (limit,))
+        rows = cursor.fetchall()
+        cursor.close()
+        return [dict(r) for r in reversed(rows)]
+    finally:
+        return_connection(conn)
+
+def detect_trend(ratios):
+    """Simple trend detection using recent slope"""
+    if len(ratios) < 5:
+        return "insufficient_data", 0
+
+    recent = ratios[-5:]
+    slope = (recent[-1] - recent[0]) / len(recent)
+
+    if slope > 5:
+        return "rising_fast", slope  # +5% per day
+    elif slope > 2:
+        return "rising", slope
+    elif slope < -5:
+        return "falling_fast", slope
+    elif slope < -2:
+        return "falling", slope
+    else:
+        return "stable", slope
+
+def get_percentile_rank(ratio, lookback_days=60):
+    """Calculate where current ratio ranks in historical distribution"""
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ratio FROM tmf_daily
+            WHERE date >= CURRENT_DATE - INTERVAL '%s days'
+            ORDER BY ratio
+        """ % lookback_days)
+
+        historical = [r[0] for r in cursor.fetchall()]
+        cursor.close()
+
+        if len(historical) < 10:
+            return None
+
+        rank = sum(1 for h in historical if h < ratio) / len(historical) * 100
+        return rank
+    finally:
+        return_connection(conn)
 
 def analyze():
     data = get_latest_data(20)
@@ -32,9 +75,17 @@ def analyze():
     prev_ratio = float(yesterday['ratio'])
     diff = ratio - prev_ratio
     
-    # Calculate 5MA
+    # Calculate MA (adaptive to available data)
     ratios = [d['ratio'] for d in data]
-    ma5 = sum(ratios[-5:]) / len(ratios[-5:]) if len(ratios) >= 5 else sum(ratios) / len(ratios)
+    ma_period = min(5, len(ratios))
+    ma5 = sum(ratios[-ma_period:]) / ma_period
+    ma_label = f"{ma_period}日均" if ma_period < 5 else "5日均"
+
+    # Detect trend
+    trend, slope = detect_trend(ratios)
+
+    # Get percentile ranking (if enough history)
+    percentile = get_percentile_rank(ratio)
     
     # Tsai Sen Logic (Calibrated for Taiwan Futures Market)
     # Note: Taiwan retail tends to be structurally net long (mean ~+20% to +30%)
@@ -68,10 +119,14 @@ def analyze():
         "ratio": ratio,
         "diff": diff,
         "ma5": ma5,
+        "ma_label": ma_label,
         "price": today['price'],
         "signal": signal,
         "commentary": commentary,
-        "reminder": reminder
+        "reminder": reminder,
+        "trend": trend,
+        "slope": slope,
+        "percentile": percentile
     }
     
     return report
@@ -79,16 +134,35 @@ def analyze():
 def format_report(report):
     if isinstance(report, str):
         return report
-        
+
     diff_str = f"↗️ +{report['diff']:.1f}%" if report['diff'] >= 0 else f"↘️ {report['diff']:.1f}%"
-    
+
+    # Trend emoji
+    trend_emoji = {
+        "rising_fast": "📈 快速上升",
+        "rising": "↗️ 上升",
+        "stable": "➡️ 持平",
+        "falling": "↘️ 下降",
+        "falling_fast": "📉 快速下降",
+        "insufficient_data": "⏳ 資料不足"
+    }
+
     text = f"📊 微台散戶多空趨勢 ({report['date']})\n"
     text += f"● 今日數值：{report['ratio']:.1f}% ({diff_str})\n"
-    text += f"● 5 日平均：{report['ma5']:.1f}%\n"
+    text += f"● {report['ma_label']}線：{report['ma5']:.1f}%\n"
+
+    # Add percentile if available
+    if report.get('percentile') is not None:
+        text += f"● 歷史排名：第 {report['percentile']:.0f} 百分位\n"
+
+    # Add trend if available
+    if report.get('trend'):
+        text += f"● 趨勢方向：{trend_emoji.get(report['trend'], report['trend'])}\n"
+
     text += f"● 判斷結果：{report['signal']}\n\n"
     text += f"🔍 蔡森型態進階分析：\n{report['commentary']}\n\n"
     text += f"💡 操盤手提醒：{report['reminder']}"
-    
+
     return text
 
 if __name__ == "__main__":

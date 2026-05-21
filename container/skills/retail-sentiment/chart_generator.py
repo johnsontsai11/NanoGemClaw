@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from db import get_connection
+from db import get_connection, return_connection
 import os
 import pandas as pd
 import numpy as np
@@ -11,10 +11,10 @@ SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def generate_chart(output_path):
+    conn = None
     try:
         conn = get_connection()
         df = pd.read_sql("SELECT * FROM tmf_daily ORDER BY date DESC LIMIT 20", conn)
-        conn.close()
 
         if df.empty or len(df) < 2:
             print("Error: Insufficient data to generate chart (need at least 2 data points)")
@@ -22,6 +22,9 @@ def generate_chart(output_path):
     except Exception as e:
         print(f"Error: Failed to fetch data from database: {e}")
         return False
+    finally:
+        if conn:
+            return_connection(conn)
         
     df = df.sort_values('date')
     df['date_label'] = df['date'].apply(lambda x: x.strftime('%m-%d') if hasattr(x, 'strftime') else str(x)[5:10]) # MM-DD
@@ -70,6 +73,24 @@ def generate_chart(output_path):
                     color='#ff4444', alpha=0.2, label='Extreme Long Zone')
     ax2.fill_between(df['date_label'], 30, df['ratio'], where=((df['ratio'] > 30) & (df['ratio'] <= 40)),
                     color='#ffaa00', alpha=0.15, label='Warning Zone')
+
+    # Annotate significant ratio changes (diff > 10%)
+    df['diff'] = df['ratio'].diff()
+    significant = df[df['diff'].abs() > 10]
+
+    for idx in significant.index:
+        row = df.loc[idx]
+        ax2.annotate(
+            f"{row['diff']:+.1f}%",
+            xy=(row['date_label'], row['ratio']),
+            xytext=(0, 15 if row['diff'] > 0 else -20),
+            textcoords='offset points',
+            ha='center',
+            fontsize=9,
+            color='#ffff00',
+            weight='bold',
+            bbox=dict(boxstyle='round,pad=0.4', facecolor='red' if abs(row['diff']) > 15 else 'orange', alpha=0.8)
+        )
     
     # Titles and Formatting
     plt.title('TMF Retail Sentiment Trend (Tsai Sen Methodology)', fontsize=14, pad=20, color='white')
