@@ -2,6 +2,7 @@
 name: Retail Sentiment Analysis  
 description: Taiwan Futures (TMF) retail vs institutional sentiment analysis
 enabled: true
+allowed-tools: execute_bash_script(*), send_document(*)
 ---
 
 # retail-sentiment
@@ -11,7 +12,7 @@ enabled: true
 When the user asks for "散戶籌碼分析" or "retail sentiment analysis", use the `execute_bash_script` tool with this command:
 
 ```bash
-bash /workspace/scripts/run-retail-sentiment.sh
+cd /Volumes/DevDisk/NanoGemClaw/container/skills/retail-sentiment && python3 main.py
 ```
 
 The script will:
@@ -24,7 +25,7 @@ The script will:
 After the script completes successfully, use the `send_document` tool to send the chart file to the user. **Do not send any additional messages after sending the document** - the report text is already included as the caption.
 
 **Example workflow:**
-1. Call `execute_bash_script` with command: `bash /workspace/scripts/run-retail-sentiment.sh`
+1. Call `execute_bash_script` with command: `cd /Volumes/DevDisk/NanoGemClaw/container/skills/retail-sentiment && python3 main.py`
 2. Read the stdout for the text report
 3. Parse the chart path from stdout (format: `Chart successfully generated at absolute path: /path/to/chart.png`)
 4. Call `send_document` with the chart path and the report text as caption
