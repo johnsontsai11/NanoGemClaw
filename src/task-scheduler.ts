@@ -211,7 +211,7 @@ async function runTask(
           isAdmin: false,
           systemPrompt,
           enableWebSearch: group.enableWebSearch ?? true,
-          disableFunctionCalling: true,
+          disableFunctionCalling: false,
           conversationHistory: [],
         },
         {
