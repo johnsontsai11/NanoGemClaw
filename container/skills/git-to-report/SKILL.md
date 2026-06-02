@@ -31,6 +31,22 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
 
 2. **Transformation**:
    The script outputs a **scaffold** — one `[DATE: YYYY-MM-DD]` block per workday, guaranteed to cover every day in the range. Blocks marked `[SHIFTED FROM: YYYY-MM-DD]` mean no commits existed for that day; use the listed commits as inspiration but write a distinct description for that date (do NOT copy the exact same description as the source date). Convert all blocks into TSV rows following the [SagePlus Formatting Standards] below.
+   
+   **CRITICAL — High-Level Synthesis:**
+   - Think at the **feature/capability level**, not code-change level
+   - Ask: "What business capability was delivered?" not "What files changed?"
+   - Use **domain language** (e.g., "container reference tracking", "ETD viewer enhancements") not implementation details (e.g., "save handler refactoring", "UI component updates")
+   - **Synthesize multiple commits** into one coherent story — if 5 commits all touch the same feature, write ONE description that captures the overall work
+   - Avoid generic verbs like "refactor", "enhance", "improve" unless paired with specific business context
+   
+   **Bad examples** (too verbose, too technical):
+   ❌ "Refactor container save handler for improved type handling and integrate new 'Ref. Number' field into entity and UI for better data management" (24 words, implementation-focused)
+   ❌ "Implement refactoring of container saving to use REST parameters and enhance type handling for container IDs" (17 words, jargon-heavy)
+   
+   **Good examples** (high-level, business-focused):
+   ✅ "Add reference number field to container management with full-stack integration" (11 words, clear capability)
+   ✅ "Improve ETD viewer with excluded purchase order indicators and cleanup" (11 words, user-facing feature)
+   ✅ "Enhance picking operations with real-time MQTT status tracking and session management" (12 words, business value clear)
 
 
 3. **Save to File**:
@@ -65,7 +81,7 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
 - **Language**: English
 - **Description Length**: Descriptions should be informative and sufficiently detailed — aim for 15–25 words. They must convey WHAT was done and WHY or HOW, not just a vague label. Do NOT truncate important technical context; do NOT pad with filler.
 - **Presentation**: Follow steps 3 and 4 in the Operational Workflow. Do NOT paste the TSV content into your reply — the IPC file attachment is the deliverable.
-- **Summary Style**: Synthesize and summarize the git log descriptions into meaningful high-level features or tasks. The description must capture the core technical work done, including relevant implementation detail. Do NOT copy-paste raw commit messages verbatim; do NOT produce vague one-phrase summaries.
+- **Summary Style**: Synthesize multiple commits into ONE high-level capability or feature. Think "what product/business capability was delivered this day?" NOT "what code was touched." The description must be understandable to a project manager, not just developers. Focus on WHAT and WHY (business value), not HOW (implementation). Do NOT copy-paste raw commit messages verbatim; do NOT produce vague one-phrase summaries like "Bug fixes and improvements."
 - **Date Shifting for Empty Days**: If the winning project has no real commits for a date (only `[SHIFTED FROM]`), write a distinct description inspired by (but NOT identical to) the source date's commits. Do NOT duplicate descriptions across rows.
 - **Date Ordering**: Sort output rows by date ascending. Each date appears exactly once.
 - **Structure**:
