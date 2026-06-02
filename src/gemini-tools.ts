@@ -13,6 +13,8 @@ import { InputFile } from 'grammy';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 const execAsync = promisify(exec);
+import fs from 'fs';
+import path from 'path';
 import type { IpcContext, ToolMetadata } from './types.js';
 import type { ToolResponse } from '@nanogemclaw/core';
 import { logger, registerInputSchema, clearInputSchemaRegistry, getInputSchema } from '@nanogemclaw/core';
@@ -547,6 +549,32 @@ export function buildFunctionDeclarations(
     },
 
     {
+      name: 'save_work_report',
+      description:
+        'Save a TSV work report to the IPC directory. Use this after transforming git log data into TSV format. ' +
+        'This function handles file creation automatically - you do NOT need to use execute_bash_script to save the file.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          group_folder: {
+            type: 'STRING',
+            description: 'The group folder name (e.g., "admin", "coffee___code")',
+          },
+          tsv_content: {
+            type: 'STRING',
+            description: 'The complete TSV content including header row. Use literal TAB characters between columns.',
+          },
+        },
+        required: ['group_folder', 'tsv_content'],
+      },
+      _metadata: {
+        readOnly: false,
+        requiresExplicitIntent: false,
+        dangerLevel: 'safe',
+      } as ToolMetadata,
+    },
+
+    {
       name: 'send_document',
       description: 'Send a file as a document attachment to the current chat. Use this to send reports, files, and exported data to the user.',
       parameters: {
@@ -969,6 +997,43 @@ export async function executeFunctionCall(
           return { name, response: { success: true, key: args.key } };
         }
 
+
+        case 'save_work_report': {
+          const invalid = validateGroupFolder(name, args.group_folder);
+          if (invalid) return invalid;
+
+          const outputDir = path.join(
+            process.cwd(),
+            'data',
+            'ipc',
+            args.group_folder,
+          );
+          const outputPath = path.join(outputDir, 'work_report.tsv');
+
+          try {
+            fs.mkdirSync(outputDir, { recursive: true });
+            fs.writeFileSync(outputPath, args.tsv_content, 'utf-8');
+            return {
+              name,
+              response: {
+                success: true,
+                file_path: outputPath,
+                message: `Report saved to ${outputPath}`,
+              },
+            };
+          } catch (err) {
+            return {
+              name,
+              response: {
+                success: false,
+                error:
+                  err instanceof Error
+                    ? err.message
+                    : 'Failed to save work report',
+              },
+            };
+          }
+        }
 
         case 'send_document': {
           const { dispatchIpc } = await import('./ipc-handlers/index.js');

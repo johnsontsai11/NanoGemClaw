@@ -1,7 +1,7 @@
 ---
 name: git-to-report
 description: Extract Git logs from local repositories and transform them into professional 8-hour work reports in SagePlus style.
-allowed-tools: execute_bash_script(*), send_document(*)
+allowed-tools: execute_bash_script(*), save_work_report(*), send_document(*)
 ---
 
 # Git-to-Report Generator (Alias: "work report")
@@ -34,21 +34,18 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
 
 
 3. **Save to File**:
-   Use `execute_bash_script` to write the full TSV (including header). Determine the group folder from context (e.g., `admin` or `coffee___code`):
-   ```bash
-   cat << 'EOF' > /Volumes/DevDisk/NanoGemClaw/data/ipc/admin/work_report.tsv
-   Date	Project	Item	Hours
-   ...
-   EOF
+   Call `save_work_report` function with the complete TSV content. Use literal TAB characters between columns:
    ```
-   Replace `admin` with the actual group folder for the current chat.
+   save_work_report(group_folder: "admin", tsv_content: "Date\tProject\tItem\tHours\n2026-05-20\tProject1\tDescription\t8\n...")
+   ```
+   Replace `admin` with the actual group folder. The tsv_content MUST include the header row and ALL workday rows.
 
 4. **MANDATORY — Send the Document**:
-   After saving the TSV, immediately call the `send_document` function:
+   After saving, immediately call `send_document` with the file path from step 3's response:
    ```
    send_document(file_path: "/Volumes/DevDisk/NanoGemClaw/data/ipc/admin/work_report.tsv", caption: "工作報表")
    ```
-   Replace `admin` with the same group folder used in step 3. This step is NON-OPTIONAL.
+   Replace `admin` with the same group folder. This step is NON-OPTIONAL.
    Do NOT output the TSV content in your reply text — the file attachment IS the deliverable.
 
 
