@@ -22,10 +22,10 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
 
    ```bash
    # Preferred: fetch all projects at once
-   python3 /workspace/docs/git-to-report/git_reporter.py --project all --start <Date> --end <Date>
+   cd /Volumes/DevDisk/NanoGemClaw/container/skills/git-to-report && python3 git_reporter.py --project all --start <Date> --end <Date>
 
    # Or specific projects (comma-separated, no spaces)
-   python3 /workspace/docs/git-to-report/git_reporter.py --project SagePlus,Website --start <Date> --end <Date>
+   cd /Volumes/DevDisk/NanoGemClaw/container/skills/git-to-report && python3 git_reporter.py --project SagePlus,Website --start <Date> --end <Date>
    ```
    Dates must be in `YYYY-MM-DD` format. **Do NOT run this command separately per project** — a single invocation is sufficient.
 
@@ -34,20 +34,21 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
 
 
 3. **Save to File**:
-   Use `execute_bash_script` to write the full TSV (including header) to `/workspace/ipc/work_report.tsv`:
+   Use `execute_bash_script` to write the full TSV (including header). Determine the group folder from context (e.g., `admin` or `coffee___code`):
    ```bash
-   cat << 'EOF' > /workspace/ipc/work_report.tsv
+   cat << 'EOF' > /Volumes/DevDisk/NanoGemClaw/data/ipc/admin/work_report.tsv
    Date	Project	Item	Hours
    ...
    EOF
    ```
+   Replace `admin` with the actual group folder for the current chat.
 
-4. **MANDATORY — Send the File via IPC**:
-   After saving the TSV, write a `send_document` IPC message using `execute_bash_script`:
-   ```bash
-   echo "{\"type\":\"send_document\",\"chatJid\":\"CHAT_JID_HERE\",\"file_path\":\"/workspace/ipc/work_report.tsv\",\"caption\":\"Work Report\",\"timestamp\":\"$(date -Iseconds)\"}" > /workspace/ipc/messages/$(date +%s)-doc.json
+4. **MANDATORY — Send the Document**:
+   After saving the TSV, immediately call the `send_document` function:
    ```
-   Replace `CHAT_JID_HERE` with the actual `chatJid` from the system context (shown at the top of your context). This step is NON-OPTIONAL.
+   send_document(file_path: "/Volumes/DevDisk/NanoGemClaw/data/ipc/admin/work_report.tsv", caption: "工作報表")
+   ```
+   Replace `admin` with the same group folder used in step 3. This step is NON-OPTIONAL.
    Do NOT output the TSV content in your reply text — the file attachment IS the deliverable.
 
 

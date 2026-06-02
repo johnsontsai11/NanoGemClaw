@@ -283,7 +283,8 @@ You are in direct conversation mode. IMPORTANT RULES:
 2. Do NOT call send_message or mcp__nanoclaw__send_message
 3. ONLY call destructive tools (cancel_task, pause_task, resume_task) when explicitly requested by the user.
 4. For all other tools, including bash and list_tasks, you ARE authorized to use them proactively when necessary to fulfill the user's request.
-5. You MUST use the bash tool to execute git_reporter.py for work reports as specifically instructed in your [SKILLS] section. Do NOT claim you cannot do this.`;
+5. Multi-step workflows: Some skills require calling MULTIPLE functions in sequence (e.g., execute_bash_script + send_document). Complete ALL steps as instructed in the [SKILLS] section.
+6. Work reports: Follow the complete workflow in git-to-report skill - you must call BOTH execute_bash_script AND send_document. Do NOT stop after only one function call.`;
     }
 
     const knowledgePromise = (async () => {

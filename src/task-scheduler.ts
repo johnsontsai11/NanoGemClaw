@@ -32,6 +32,7 @@ import {
   resolvePreferredPath,
 } from './fast-path.js';
 import { getEffectiveSystemPrompt } from './personas.js';
+import { getEnabledSkillContents } from './skills.js';
 import { RegisteredGroup, ScheduledTask } from './types.js';
 
 export interface SchedulerDependencies {
@@ -201,6 +202,11 @@ async function runTask(
         group.persona,
       );
 
+      const skillContents = getEnabledSkillContents(
+        path.join(process.cwd(), 'container', 'skills'),
+        task.group_folder,
+      );
+
       output = await runFastPath(
         group,
         {
@@ -213,6 +219,7 @@ async function runTask(
           enableWebSearch: group.enableWebSearch ?? true,
           disableFunctionCalling: false,
           conversationHistory: [],
+          skillContents: skillContents || undefined,
         },
         {
           sourceGroup: task.group_folder,
