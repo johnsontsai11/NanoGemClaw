@@ -37,7 +37,8 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
    - Ask: "What business capability was delivered?" not "What files changed?"
    - Use **domain language** (e.g., "container reference tracking", "ETD viewer enhancements") not implementation details (e.g., "save handler refactoring", "UI component updates")
    - **Synthesize multiple commits** into one coherent story — if 5 commits all touch the same feature, write ONE description that captures the overall work
-   - Avoid generic verbs like "refactor", "enhance", "improve" unless paired with specific business context
+   - **BANNED WORDS**: Never use "Refactor", "Implement", "Optimize" as first word. Never use technical jargon: "REST parameters", "type handling", "save handler", "save operations", "REST API"
+   - **Each day MUST be distinct** - vary the specific aspects mentioned to avoid repetitive descriptions
    
    **Bad examples** (too verbose, too technical):
    ❌ "Refactor container save handler for improved type handling and integrate new 'Ref. Number' field into entity and UI for better data management" (24 words, implementation-focused)
@@ -77,9 +78,9 @@ When the user asks for a **"work report"**, you MUST complete ALL of the followi
   4. Last resort: pick the project with more detailed commit messages
   Write the TSV row for that winning (date, project, item) only — discard the rest for that date.
 - **Daily Hours**: Each row MUST have `8` hours.
-- **Tone & First Word**: Professional, technical, and achievement-oriented. The first word of the description MUST be a strong, capitalized verb (e.g., "Implement", "Improve", "Refactor", "Enable", "Fix"). Do NOT simply prepend a strong verb before the original sentence (e.g., avoid "Implement add MQTT", use "Add MQTT").
+- **Tone & First Word**: Professional, business-focused, and achievement-oriented. The first word MUST be a direct action verb: "Add", "Update", "Fix", "Enable", "Integrate", "Build", "Create". NEVER use "Refactor", "Implement", "Optimize" - these describe process, not outcome. Do NOT prepend verbs awkwardly (e.g., avoid "Implement add MQTT", use "Add MQTT integration").
 - **Language**: English
-- **Description Length**: Descriptions should be informative and sufficiently detailed — aim for 15–25 words. They must convey WHAT was done and WHY or HOW, not just a vague label. Do NOT truncate important technical context; do NOT pad with filler.
+- **Description Length**: Aim for 14-20 words. Be concise but include enough detail to distinguish each day's work. Eliminate filler phrases: "comprehensive", "for better X", "for improved Y", "ensuring consistency". Every word must add specific value.
 - **Presentation**: Follow steps 3 and 4 in the Operational Workflow. Do NOT paste the TSV content into your reply — the IPC file attachment is the deliverable.
 - **Summary Style**: Synthesize multiple commits into ONE high-level capability or feature. Think "what product/business capability was delivered this day?" NOT "what code was touched." The description must be understandable to a project manager, not just developers. Focus on WHAT and WHY (business value), not HOW (implementation). Do NOT copy-paste raw commit messages verbatim; do NOT produce vague one-phrase summaries like "Bug fixes and improvements."
 - **Date Shifting for Empty Days**: If the winning project has no real commits for a date (only `[SHIFTED FROM]`), write a distinct description inspired by (but NOT identical to) the source date's commits. Do NOT duplicate descriptions across rows.
